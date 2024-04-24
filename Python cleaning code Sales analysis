@@ -1,0 +1,98 @@
+My code -- https://www.kaggle.com/code/wutichaitachachakorn/clean-data-to-use-for-creating-dashboards
+
+# import library for cleaning and Analyze
+import pandas as pd
+import numpy as np
+
+# import data file csv
+df = pd.read_csv(r"/kaggle/input/sample-sales-data/sales_data_sample.csv", encoding='ISO-8859-1')
+
+# Validate DataFrame data
+df.info()
+
+# Count the number of duplicate rows in a DataFrame
+df.duplicated().sum()
+
+# Delete specified columns from a DataFrame
+df.drop(columns=['STATE'],inplace=True)
+df.drop(columns=['POSTALCODE'],inplace=True)
+df.drop(columns=['ADDRESSLINE2'],inplace=True)
+
+# Count the number of missing values in each column
+df.isnull().sum()
+
+# Fill in the missing values in the 'TERRITORY' column with 'NA'
+df['TERRITORY'].fillna('NA', inplace=True)
+df.isnull().sum()
+
+# Convert column to datetime format
+df['ORDERDATE'] = pd.to_datetime(df['ORDERDATE'])
+
+# Check the data type in the DataFrame.
+df.dtypes
+
+# Concat Fullname
+df['Full_Name'] = pd.concat([df['CONTACTLASTNAME'], df['CONTACTFIRSTNAME']], axis=1).apply(lambda x: ' '.join(x), axis=1)
+
+# look head dataframe
+df = pd.DataFrame(df)
+df.head()
+
+# Descriptive Statistics
+df[['QUANTITYORDERED','PRICEEACH','ORDERLINENUMBER','SALES']].describe()
+
+# import libary plot graph
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Create a function for calculating confidence intervals with z-scores.
+def confidence_interval_z_score(df, confidence=0.95):
+    n = len(df)
+    m = np.mean(df)
+    std = np.std(df)
+    z = 1.96  # z-score for confidence level 95%
+    h = z * (std / np.sqrt(n))
+    return m, h
+
+# Use the confidence_interval_z_score function to calculate the confidence interval for a column. 'QUANTITYORDERED', 'PRICEEACH', and 'SALES'
+quantity_ordered_mean, quantity_ordered_ci = confidence_interval_z_score(df['QUANTITYORDERED'])
+price_each_mean, price_each_ci = confidence_interval_z_score(df['PRICEEACH'])
+sales_mean, sales_ci = confidence_interval_z_score(df['SALES'])
+
+print("Confidence Interval (95%) for QUANTITYORDERED:")
+print(f"Mean: {quantity_ordered_mean}")
+print(f"Confidence Interval: {quantity_ordered_mean - quantity_ordered_ci} to {quantity_ordered_mean + quantity_ordered_ci}")
+print()
+print("Confidence Interval (95%) for PRICEEACH:")
+print(f"Mean: {price_each_mean}")
+print(f"Confidence Interval: {price_each_mean - price_each_ci} to {price_each_mean + price_each_ci}")
+print()
+print("Confidence Interval (95%) for SALES:")
+print(f"Mean: {sales_mean}")
+print(f"Confidence Interval: {sales_mean - sales_ci} to {sales_mean + sales_ci}")
+
+# boxplot
+plt.figure(figsize=(8, 6))
+sns.boxplot(df['SALES'])
+plt.title('Box Plot of Measures of Spread')
+plt.ylabel('Value')
+plt.xlabel('Measure')
+plt.xticks(ticks=[0], labels=['Sales'])
+plt.show()
+
+# correlation matrix
+correlation_matrix = df.corr(numeric_only = True)
+print("Correlation Matrix:")
+print(correlation_matrix)
+
+# scatterplot
+plt.figure(figsize=(8, 6))
+sns.scatterplot(x='QUANTITYORDERED', y='SALES', data=df)
+plt.title('Relationship between Quantity Ordered and Sales')
+plt.xlabel('Quantity Ordered')
+plt.ylabel('Sales')
+plt.grid(True)
+plt.show()
+
+# import data to create dashboard
+df.to_csv('Sales_Analysis_Project1.csv')
